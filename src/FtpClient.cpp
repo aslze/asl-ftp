@@ -212,12 +212,14 @@ bool FtpClient::del(const String& name)
 	return ansOK(ans.first);
 }
 
-bool FtpClient::download(const String& name)
+bool FtpClient::download(const String& name, const String& dest)
 {
 	if (!startPassive())
 		return false;
 
-	File file(Path(name).name(), File::WRITE);
+	String path = (dest == "." || File(dest).isDirectory()) ? (dest + "/" + Path(name).name()) : dest;
+
+	File file(path, File::WRITE);
 
 	auto ans = sendCommand("RETR " + name);
 	if (ans.first > 299)

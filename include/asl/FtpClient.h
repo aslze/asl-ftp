@@ -66,9 +66,9 @@ public:
 	bool put(const String& name, const ByteArray& data);
 	
 	/**
-	 * Downloads a remote file to a local file (similar to get() but storing locally)
+	 * Downloads a remote file to a local file (dest is a directory or a file path, default is current dir)
 	 */
-	bool download(const String& name);
+	bool download(const String& name, const String& dest = ".");
 	
 	/**
 	 * Uploads a local file to the server at the remote current directory

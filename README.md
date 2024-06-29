@@ -29,8 +29,26 @@ for (auto& item : items)
 
 auto data = ftp.get("/some/file");
 
+// download to a local file
+
+ftp.download("/some/file");
+
 // upload a file to a remote directory
 
 ftp.cd("/pub/images");
 ftp.upload("/localdir/image.png");
+
+// delete a file
+
+ftp.del("/pub/oldimage.png");
+```
+
+Can use it with CMake like this (including ASL first):
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(aslftp URL https://github.com/aslze/asl-ftp/archive/1.0.zip)
+FetchContent_MakeAvailable(aslftp)
+
+target_link_libraries(myprogram aslftp)
 ```
