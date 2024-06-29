@@ -1,4 +1,4 @@
-// Copyright 2024 ASL author
+// Copyright 2024 aslze
 // Licensed under the MIT License (http://opensource.org/licenses/MIT)
 
 #ifndef ASL_FTP_H
