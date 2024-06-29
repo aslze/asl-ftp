@@ -31,7 +31,7 @@ auto data = ftp.get("/some/file");
 
 // download to a local file
 
-ftp.download("/some/file");
+ftp.download("/some/file", "/local/dir");
 
 // upload a file to a remote directory
 
@@ -39,7 +39,7 @@ ftp.cd("/pub/images");
 ftp.upload("/localdir/image.png");
 
 // delete a file
-
+
 ftp.del("/pub/oldimage.png");
 ```
 
@@ -52,3 +52,4 @@ FetchContent_MakeAvailable(aslftp)
 
 target_link_libraries(myprogram aslftp)
 ```
+
