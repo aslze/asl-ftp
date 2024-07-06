@@ -27,15 +27,16 @@ public:
 	FtpClient();
 
 	/**
-	 * Connects to an FTP server at a given host and port (default 21), and returns true on success
+	 * Connects to an FTP server at a given host and port (default 21 or 990 for ftps), and returns true on success
+	 * (prefix the host with `ftp://` for implicit TLS)
 	 */
-	bool connect(const String& host, int port = 21);
-	
+	bool connect(const String& host, int port = -1);
+
 	/**
 	 * Logs in to a connected server with a user an password (by default uses anonymous login) and returns true on success
 	 */
 	bool login(const String& user = "", const String& pass = "");
-	
+
 	/**
 	 * Disconnects from a server
 	 */
@@ -59,22 +60,22 @@ public:
 	 * Gets the content of a file as a byte array (without storing to a file)
 	 */
 	ByteArray get(const String& name);
-	
+
 	/**
 	 * Puts a new remote file with content from a byte array
 	 */
 	bool put(const String& name, const ByteArray& data);
-	
+
 	/**
 	 * Downloads a remote file to a local file (dest is a directory or a file path, default is current dir)
 	 */
 	bool download(const String& name, const String& dest = ".");
-	
+
 	/**
 	 * Uploads a local file to the server at the remote current directory
 	 */
 	bool upload(const String& name);
-	
+
 	/**
 	 * Deletes a remote file
 	 */

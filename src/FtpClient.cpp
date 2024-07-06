@@ -3,6 +3,9 @@
 #include <asl/File.h>
 #include <asl/Map.h>
 #include <asl/Path.h>
+#ifdef ASL_TLS
+#include <asl/TlsSocket.h>
+#endif
 
 namespace asl
 {
@@ -16,14 +19,14 @@ static DirEntry parseDirEntry(const String& line)
 	DirEntry item;
 	item.size = 0;
 	item.isdir = false;
-	auto parts = line.split(';', '=');
+	auto parts = line.toLowerCase().split(';', '=');
 	if (!line || !parts)
 		return item;
 	item.name = line.substring(line.lastIndexOf("; ") + 2);
 	item.isdir = parts["type"] == "dir";
 	item.size = parts["size"];
 	String date = parts["modify"];
-	item.date = date.length() == 14 ? Date(Date::UTC, date.substr(0, 4), date.substr(4, 2), date.substr(6, 2),
+	item.date = date.length() >= 14 ? Date(Date::UTC, date.substr(0, 4), date.substr(4, 2), date.substr(6, 2),
 	                                       date.substr(8, 2), date.substr(10, 2), date.substr(12, 2))
 	                                : Date();
 	return item;
@@ -36,19 +39,35 @@ FtpClient::FtpClient()
 
 bool FtpClient::connect(const String& host, int port)
 {
-	bool ok = _socket.connect(host, port);
+	_host = host;
+	_socket = Socket();
+
+	int sep = host.indexOf("://");
+	if (sep > 0)
+	{
+		String proto = host.substring(0, sep);
+		_host = host.substr(sep + 3);
+		if (proto == "ftps")
+		{
+#ifdef ASL_TLS
+			if (port < 0)
+				port = 990;
+			_socket = TlsSocket();
+#else
+			return false;
+#endif
+		}
+	}
+
+	if (port < 0)
+		port = 21;
+
+	bool ok = _socket.connect(_host, port);
 	if (!ok)
 		return false;
 
 	auto ans = getReply();
-	_host = host;
 
-	ans = sendCommand("FEAT");
-	if (ansOK(ans.first))
-	{
-		auto feats = ans.second.split();
-		_hasMlsd = feats.contains("MLST") || feats.contains("MLSD");
-	}
 	return true;
 }
 
@@ -56,11 +75,25 @@ bool FtpClient::login(const String& user, const String& pass)
 {
 	if (!_socket)
 		return false;
+	
 	auto ans = sendCommand("USER " + (user | "anonymous"));
+	
 	if (ans.first != 331)
 		return false;
-	ans = sendCommand("PASS " + (user | "anonymous@here.net"));
-	return ansOK(ans.first);
+	
+	ans = sendCommand("PASS " + (pass | "anonymous@here.net"));
+	
+	if (!ansOK(ans.first))
+		return false;
+
+	ans = sendCommand("FEAT");
+	if (ansOK(ans.first))
+	{
+		auto feats = ans.second.split();
+		_hasMlsd = feats.contains("MLST") || feats.contains("MLSD");
+	}
+
+	return true;
 }
 
 void FtpClient::disconnect()
@@ -101,7 +134,7 @@ Array<DirEntry> FtpClient::list(const String& dir)
 		for (auto& line : lines)
 		{
 			auto item = parseDirEntry(line);
-			if (item.name)
+			if (item.name && item.name != "." && item.name != "..")
 				items << item;
 		}
 	}
@@ -127,7 +160,7 @@ Array<DirEntry> FtpClient::list(const String& dir)
 					h += 12;
 				else if (h == 12)
 					h -= 12;
-				item.name = line.substring(39); //.last();
+				item.name = line.substring(39);
 				item.date = Date(2000 + int(dmy[2]), dmy[0], dmy[1], h, m);
 				item.isdir = parts[2] == "<DIR>";
 				item.size = item.isdir ? 0 : (int)parts[2];
@@ -135,22 +168,23 @@ Array<DirEntry> FtpClient::list(const String& dir)
 				continue;
 			}
 
-			if (n < 6)
+			if (n < 9)
 				continue;
 
-			item.name = parts.last();
+			int namei = line.indexOf(" " + parts[7] + " ") + parts[7].length() + 2;
+			item.name = line.substr(namei);
 			item.isdir = parts[0].startsWith('d');
-			item.size = parts[n - 5];
-			bool hastime = parts[n - 2].contains(':');
-			int  year = hastime ? thisyear : int(parts[n - 2]);
+			item.size = parts[4];
+			bool hastime = parts[7].contains(':');
+			int  year = hastime ? thisyear : int(parts[7]);
 
 			if (hastime)
 			{
 				auto hhmm = parts[n - 2].split(':');
-				item.date = Date(year, months[parts[n - 4]], parts[n - 3], hhmm[0], hhmm[1]);
+				item.date = Date(Date::UTC, year, months[parts[5]], parts[6], hhmm[0], hhmm[1]);
 			}
 			else
-				item.date = Date(year, months[parts[n - 4]], parts[n - 3]);
+				item.date = Date(year, months[parts[5]], parts[6]);
 
 			items << item;
 		}
