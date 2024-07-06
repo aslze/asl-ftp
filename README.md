@@ -3,8 +3,11 @@
 A very simple and incomplete FTP client class.
 
 * Only supports *passive* data transfers, and assumes same host for data as for commands
-* Only plain FTP (not encrypted) at the momment (maybe implicit TLS in the future)
+* Supports plain FTP and FTPS (TLS encrypted, implicit only)
 * Directory listing in older servers not supporting MLSD may give wrong results
+
+To connect to implicit TLS FTP server, prefix the host with `ftps://`. The command channel (including
+user and password) are encrypted, but the data channel is currently not.
 
 Simplified example (most commands will return false on failure):
 
