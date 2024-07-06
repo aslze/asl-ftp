@@ -5,6 +5,8 @@ A very simple and incomplete FTP client class.
 * Only supports *passive* data transfers, and assumes same host for data as for commands
 * Supports plain FTP and FTPS (TLS encrypted, implicit only)
 * Directory listing in older servers not supporting MLSD may give wrong results
+* Requires the [ASL](https://github.com/aslze/asl) library and for FTPS, ASL must be compiled
+with the `ASL_TLS` option for TLS sockets.
 
 To connect to implicit TLS FTP server, prefix the host with `ftps://`. The command channel (including
 user and password) are encrypted, but the data channel is currently not.
